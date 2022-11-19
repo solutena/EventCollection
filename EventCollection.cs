@@ -2,19 +2,15 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-interface IEventCollection<T>
-{
-	public event Action<T, bool> Event;
-	public Action Changed { get; set; }
-}
-
 [Serializable]
-public class EventList<T> : List<T>, IEventCollection<T>, ISerializationCallbackReceiver
+public class EventList<T> : List<T>, ISerializationCallbackReceiver
 {
+	public delegate void EventListDelegate(T item, bool isAdd);
+
 	[SerializeField] List<T> serialize;
 
-	public event Action<T, bool> Event;
 	public Action Changed { get; set; }
+	public event EventListDelegate Event;
 
 	public EventList() { }
 	public EventList(IEnumerable<T> collection) { AddRange(collection); }
@@ -24,7 +20,6 @@ public class EventList<T> : List<T>, IEventCollection<T>, ISerializationCallback
 
 	public new void Add(T item)
 	{
-		Debug.Log("Add");
 		base.Add(item);
 		Event?.Invoke(item, true);
 		Changed?.Invoke();
@@ -32,7 +27,6 @@ public class EventList<T> : List<T>, IEventCollection<T>, ISerializationCallback
 
 	public new void AddRange(IEnumerable<T> collection)
 	{
-		Debug.Log("AddRange");
 		base.AddRange(collection);
 		foreach (var item in collection)
 			Event?.Invoke(item, true);
@@ -40,7 +34,6 @@ public class EventList<T> : List<T>, IEventCollection<T>, ISerializationCallback
 	}
 	public new void Insert(int index, T item)
 	{
-		Debug.Log("Insert");
 		base.Insert(index, item);
 		Event?.Invoke(item, true);
 		Changed?.Invoke();
@@ -48,7 +41,6 @@ public class EventList<T> : List<T>, IEventCollection<T>, ISerializationCallback
 
 	public new void InsertRange(int index, IEnumerable<T> collection)
 	{
-		Debug.Log("InsertRange");
 		base.InsertRange(index, collection);
 		foreach (var item in collection)
 			Event?.Invoke(item, true);
