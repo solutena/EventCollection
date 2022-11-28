@@ -1,6 +1,7 @@
 # EventCollection
 
 Collection에 변화가 있을 때 이벤트를 등록할 수 있는 클래스이다.
+
 직렬화(serialize) 할 수 있다.
 
 
