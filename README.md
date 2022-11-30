@@ -1,14 +1,14 @@
 # EventCollection
 
-Collection에 변화가 있을 때 이벤트를 등록할 수 있는 클래스이다.
+`Collection`에 변화가 있을 때 이벤트를 등록할 수 있는 클래스이다.
 
-직렬화(serialize) 할 수 있다.
+`serialize` 할 수 있다.
 
 
 
 ## Event
 
-Event는 각 요소가 추가되거나 제거될 때 호출된다.
+`Event`는 각 요소가 추가되거나 제거될 때 호출된다.
 
 ### Add, Remove
 
@@ -38,7 +38,7 @@ Remove : 0
 
 ## Changed
 
-Changed는 Event가 종료된 후 한번만 호출된다.
+`Changed`는 `Event`가 종료된 후 한번만 호출된다.
 
 ```
 void Start()
