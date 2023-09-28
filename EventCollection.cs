@@ -30,8 +30,10 @@ public class EventDictionary<TKey, TValue> : Dictionary<TKey, TValue>, ISerializ
 		foreach (var item in this)
 			serialize.Add(new SerializableKeyValuePair(item.Key, item.Value));
 	}
+
 	public void OnAfterDeserialize()
 	{
+		Clear();
 		foreach (var item in serialize)
 		{
 			base.Add(item.key, item.value);
@@ -49,7 +51,7 @@ public class EventDictionary<TKey, TValue> : Dictionary<TKey, TValue>, ISerializ
 
 	public new bool TryAdd(TKey key, TValue value)
 	{
-		if(base.TryAdd(key, value))
+		if (base.TryAdd(key, value))
 		{
 			Event?.Invoke(key, value, true);
 			Changed?.Invoke();
@@ -116,7 +118,7 @@ public class EventHashSet<T> : HashSet<T>, ISerializationCallbackReceiver
 
 	public new bool Add(T item)
 	{
-		if(base.Add(item))
+		if (base.Add(item))
 		{
 			Event?.Invoke(item, true);
 			Changed?.Invoke();
@@ -140,9 +142,9 @@ public class EventHashSet<T> : HashSet<T>, ISerializationCallbackReceiver
 	{
 		int numRemoved = 0;
 		var item = GetEnumerator();
-		while(item.MoveNext())
+		while (item.MoveNext())
 		{
-			if(match(item.Current))
+			if (match(item.Current))
 			{
 				Event?.Invoke(item.Current, false);
 				numRemoved++;
@@ -168,7 +170,7 @@ public class EventList<T> : List<T>, ISerializationCallbackReceiver
 {
 	public delegate void EventDelegate(T item, bool isAdd);
 
-	[SerializeField] List<T> serialize;
+	[SerializeField] List<T> serialize = new();
 
 	public Action Changed { get; set; }
 	public event EventDelegate Event;
