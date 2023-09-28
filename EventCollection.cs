@@ -33,7 +33,7 @@ public class EventDictionary<TKey, TValue> : Dictionary<TKey, TValue>, ISerializ
 
 	public void OnAfterDeserialize()
 	{
-		Clear();
+		base.Clear();
 		foreach (var item in serialize)
 		{
 			base.Add(item.key, item.value);
@@ -108,6 +108,7 @@ public class EventHashSet<T> : HashSet<T>, ISerializationCallbackReceiver
 	public void OnBeforeSerialize() => serialize = new List<T>(this);
 	public void OnAfterDeserialize()
 	{
+		base.Clear();
 		foreach (var item in serialize)
 		{
 			base.Add(item);
