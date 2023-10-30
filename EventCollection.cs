@@ -180,7 +180,7 @@ public class EventList<T> : List<T>, ISerializationCallbackReceiver
 	public EventList(IEnumerable<T> collection) : base(collection) { Changed?.Invoke(); }
 
 	public void OnBeforeSerialize() => serialize = new List<T>(this);
-	public void OnAfterDeserialize() => AddRange(serialize);
+	public void OnAfterDeserialize() { base.Clear(); AddRange(serialize); }
 
 	public new void Add(T item)
 	{
