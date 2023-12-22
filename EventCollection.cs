@@ -1,125 +1,102 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
-[Serializable]
-public class EventDictionary<TKey, TValue> : Dictionary<TKey, TValue>, ISerializationCallbackReceiver
+interface IEventCollection<T>
 {
-	[Serializable]
-	public struct SerializableKeyValuePair
-	{
-		public SerializableKeyValuePair(TKey key, TValue value) { this.key = key; this.value = value; }
-		public TKey key;
-		public TValue value;
-	}
+	public event Action<T, bool> Event;
+	public event Action Changed;
+}
 
-	public delegate void EventDelegate(TKey key, TValue value, bool isAdd);
+[Serializable]
+public class EventDictionary<Key, Value> : IEventCollection<Value>, IEnumerable<KeyValuePair<Key, Value>>, ISerializationCallbackReceiver
+{
+	[SerializeField] List<KeyValuePair<Key, Value>> serialize;
+	Dictionary<Key, Value> dictionary = new Dictionary<Key, Value>();
 
-	[SerializeField] List<SerializableKeyValuePair> serialize;
+	public event Action<Value, bool> Event;
+	public event Action Changed;
 
-	public Action Changed { get; set; }
-	public event EventDelegate Event;
-
-	public EventDictionary() : base() { }
-	public EventDictionary(IDictionary<TKey, TValue> dictionary) : base(dictionary) { }
-	public EventDictionary(IEnumerable<KeyValuePair<TKey, TValue>> collection) : base(collection) { }
+	public Value this[Key key] => dictionary[key];
+	public EventDictionary() { }
 
 	public void OnBeforeSerialize()
 	{
-		serialize = new List<SerializableKeyValuePair>();
-		foreach (var item in this)
-			serialize.Add(new SerializableKeyValuePair(item.Key, item.Value));
+		serialize = dictionary.ToList();
 	}
 
 	public void OnAfterDeserialize()
 	{
-		base.Clear();
-		foreach (var item in serialize)
-		{
-			base.Add(item.key, item.value);
-			Event?.Invoke(item.key, item.value, true);
-		}
+		dictionary = serialize.ToDictionary(pair => pair.Key, pair => pair.Value);
+		foreach (var value in dictionary.Values)
+			Event?.Invoke(value, true);
 		Changed?.Invoke();
 	}
 
-	public new void Add(TKey key, TValue value)
+	public void Add(Key key, Value value)
 	{
-		base.Add(key, value);
-		Event?.Invoke(key, value, true);
+		dictionary.Add(key, value);
+		Event?.Invoke(value, true);
 		Changed?.Invoke();
 	}
 
-	public new bool TryAdd(TKey key, TValue value)
+	public void Clear()
 	{
-		if (base.TryAdd(key, value))
-		{
-			Event?.Invoke(key, value, true);
-			Changed?.Invoke();
-			return true;
-		}
-		return false;
-	}
-
-	public new bool Remove(TKey key)
-	{
-		if (base.Remove(key, out TValue value))
-		{
-			Event?.Invoke(key, value, false);
-			Changed?.Invoke();
-			return true;
-		}
-		return false;
-	}
-
-	public new bool Remove(TKey key, out TValue value)
-	{
-		if (base.Remove(key, out value))
-		{
-			Event?.Invoke(key, value, false);
-			Changed?.Invoke();
-			return true;
-		}
-		return false;
-	}
-
-	public new void Clear()
-	{
-		var prev = new List<KeyValuePair<TKey, TValue>>(this);
-		base.Clear();
+		var prev = new List<Value>(dictionary.Values);
+		dictionary.Clear();
 		foreach (var item in prev)
-			Event?.Invoke(item.Key, item.Value, false);
+			Event?.Invoke(item, false);
 		Changed?.Invoke();
 	}
+
+	public bool Remove(Key key)
+	{
+		var value = dictionary[key];
+		if (dictionary.Remove(key))
+		{
+			Event?.Invoke(value, false);
+			Changed?.Invoke();
+			return true;
+		}
+		return false;
+	}
+
+	public bool ContainsKey(Key key) => dictionary.ContainsKey(key);
+	public Value Get(Key key) => dictionary.Get(key);
+	public IEnumerator<KeyValuePair<Key, Value>> GetEnumerator() => dictionary.GetEnumerator();
+	IEnumerator IEnumerable.GetEnumerator() => dictionary.GetEnumerator();
 }
 
 [Serializable]
-public class EventHashSet<T> : HashSet<T>, ISerializationCallbackReceiver
+public class EventHashSet<T> : IEventCollection<T>, IEnumerable<T>, ISerializationCallbackReceiver
 {
-	public delegate void EventDelegate(T item, bool isAdd);
-
 	[SerializeField] List<T> serialize;
+	HashSet<T> hashSet = new HashSet<T>();
 
-	public Action Changed { get; set; }
-	public event EventDelegate Event;
+	public int Count => hashSet.Count;
+	public event Action<T, bool> Event;
+	public event Action Changed;
 
-	public EventHashSet() : base() { }
-	public EventHashSet(IEnumerable<T> collection) : base(collection) { }
+	public EventHashSet() { }
 
-	public void OnBeforeSerialize() => serialize = new List<T>(this);
+	public void OnBeforeSerialize()
+	{
+		serialize = hashSet.ToList();
+	}
+
 	public void OnAfterDeserialize()
 	{
-		base.Clear();
-		foreach (var item in serialize)
-		{
-			base.Add(item);
+		hashSet = serialize.ToHashSet();
+		foreach (var item in hashSet)
 			Event?.Invoke(item, true);
-		}
 		Changed?.Invoke();
 	}
 
-	public new bool Add(T item)
+	public bool Add(T item)
 	{
-		if (base.Add(item))
+		if (hashSet.Add(item))
 		{
 			Event?.Invoke(item, true);
 			Changed?.Invoke();
@@ -128,102 +105,77 @@ public class EventHashSet<T> : HashSet<T>, ISerializationCallbackReceiver
 		return false;
 	}
 
-	public new bool Remove(T item)
+	public void Clear()
 	{
-		if (base.Remove(item))
-		{
-			Event?.Invoke(item, false);
-			Changed?.Invoke();
-			return true;
-		}
-		return false;
-	}
-
-	public new int RemoveWhere(Predicate<T> match)
-	{
-		int numRemoved = 0;
-		var item = GetEnumerator();
-		while (item.MoveNext())
-		{
-			if (match(item.Current))
-			{
-				Event?.Invoke(item.Current, false);
-				numRemoved++;
-			}
-		}
-		if (0 < numRemoved)
-			Changed?.Invoke();
-		return numRemoved;
-	}
-
-	public new void Clear()
-	{
-		var prev = new List<T>(this);
-		base.Clear();
+		var prev = new List<T>(hashSet);
+		hashSet.Clear();
 		foreach (var item in prev)
 			Event?.Invoke(item, false);
 		Changed?.Invoke();
 	}
+
+	public bool Remove(T item)
+	{
+		if (hashSet.Remove(item))
+		{
+			Event?.Invoke(item, false);
+			Changed?.Invoke();
+			return true;
+		}
+		return false;
+	}
+
+	public bool Contains(T item) => hashSet.Contains(item);
+	public IEnumerator<T> GetEnumerator() => hashSet.GetEnumerator();
+	IEnumerator IEnumerable.GetEnumerator() => hashSet.GetEnumerator();
 }
 
 [Serializable]
-public class EventList<T> : List<T>, ISerializationCallbackReceiver
+public class EventList<T> : IEventCollection<T>, IEnumerable<T>, ISerializationCallbackReceiver
 {
-	public delegate void EventDelegate(T item, bool isAdd);
+	[SerializeField] List<T> serialize = new List<T>();
 
-	[SerializeField] List<T> serialize = new();
+	public T this[int index] => serialize[index];
 
-	public Action Changed { get; set; }
-	public event EventDelegate Event;
+	public int Count => serialize.Count;
+	public event Action<T, bool> Event;
+	public event Action Changed;
 
-	public EventList() : base() { }
-	public EventList(IEnumerable<T> collection) : base(collection) { Changed?.Invoke(); }
+	public EventList() { }
+	public EventList(IEnumerable<T> collection) { AddRange(collection); }
 
-	public void OnBeforeSerialize() => serialize = new List<T>(this);
-	public void OnAfterDeserialize() { base.Clear(); AddRange(serialize); }
+	public void OnBeforeSerialize() { }
+	public void OnAfterDeserialize() { serialize.ForEach(item => Event?.Invoke(item, true)); Changed?.Invoke(); }
+	public void OnChanged() => Changed?.Invoke();
+	public void OnEvent(T item, bool isAdd) => Event?.Invoke(item, isAdd);
 
-	public new void Add(T item)
+	public void Add(T item)
 	{
-		base.Add(item);
+		serialize.Add(item);
 		Event?.Invoke(item, true);
 		Changed?.Invoke();
 	}
 
-	public new void AddRange(IEnumerable<T> collection)
+	public void AddRange(IEnumerable<T> collection)
 	{
-		base.AddRange(collection);
+		serialize.AddRange(collection);
 		foreach (var item in collection)
 			Event?.Invoke(item, true);
 		Changed?.Invoke();
 	}
 
-	public new void Insert(int index, T item)
+	public void Clear()
 	{
-		base.Insert(index, item);
-		Event?.Invoke(item, true);
-		Changed?.Invoke();
-	}
-
-	public new void InsertRange(int index, IEnumerable<T> collection)
-	{
-		base.InsertRange(index, collection);
-		foreach (var item in collection)
-			Event?.Invoke(item, true);
-		Changed?.Invoke();
-	}
-
-	public new void Clear()
-	{
-		var prev = new List<T>(this);
-		base.Clear();
+		var prev = new List<T>(serialize);
+		serialize.Clear();
 		foreach (var item in prev)
 			Event?.Invoke(item, false);
 		Changed?.Invoke();
 	}
 
-	public new bool Remove(T item)
+	public bool Remove(T item)
 	{
-		if (base.Remove(item))
+		if (serialize.Remove(item))
 		{
 			Event?.Invoke(item, false);
 			Changed?.Invoke();
@@ -232,32 +184,28 @@ public class EventList<T> : List<T>, ISerializationCallbackReceiver
 		return false;
 	}
 
-	public new void RemoveAt(int index)
+	public void RemoveAt(int index)
 	{
-		var item = this[index];
-		base.RemoveAt(index);
+		var item = serialize[index];
+		serialize.RemoveAt(index);
 		Event?.Invoke(item, false);
 		Changed?.Invoke();
 	}
 
-	public new int RemoveAll(Predicate<T> match)
+	public void RemoveAll(Func<T, bool> condition)
 	{
-		var target = new List<T>(FindAll(match));
-		int count = base.RemoveAll(match);
+		var target = new List<T>(serialize.Where(condition));
 		for (int i = target.Count - 1; i >= 0; i--)
 		{
 			var prev = target[i];
-			base.Remove(prev);
+			serialize.Remove(prev);
 			Event?.Invoke(prev, false);
 		}
 		Changed?.Invoke();
-		return count;
 	}
 
-	public new void Reverse(int index, int count) { base.Reverse(index, count); Changed?.Invoke(); }
-	public new void Reverse() { base.Reverse(); Changed?.Invoke(); }
-	public new void Sort(Comparison<T> comparison) { base.Sort(comparison); Changed?.Invoke(); }
-	public new void Sort(int index, int count, IComparer<T> comparer) { base.Sort(index, count, comparer); Changed?.Invoke(); }
-	public new void Sort() { base.Sort(); Changed?.Invoke(); }
-	public new void Sort(IComparer<T> comparer) { base.Sort(comparer); Changed?.Invoke(); }
+	public void ForEach(Action<T> action) => serialize.ForEach(action);
+	public bool Contains(T item) => serialize.Contains(item);
+	public IEnumerator<T> GetEnumerator() => serialize.GetEnumerator();
+	IEnumerator IEnumerable.GetEnumerator() => serialize.GetEnumerator();
 }
