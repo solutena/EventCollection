@@ -19,8 +19,11 @@ public class EventDictionary<Key, Value> : IEventCollection<Value>, IEnumerable<
 	public event EventCollectionEventHandler<Value> Event;
 	public event Action Changed;
 
-	public Value this[Key key] => serialize[key];
 	public EventDictionary() { }
+	public EventDictionary(IDictionary<Key, Value> dictionary) => serialize = (SerializebleDictionary<Key, Value>)dictionary.ToDictionary(k => k.Key, v => v.Value);
+	public Value this[Key key] => serialize[key];
+	public SerializebleDictionary<Key, Value> Items => serialize;
+	public int Count => serialize.Count;
 
 	public void OnBeforeSerialize() { }
 	public void OnAfterDeserialize()
@@ -72,11 +75,13 @@ public class EventHashSet<T> : IEventCollection<T>, IEnumerable<T>, ISerializati
 {
 	[SerializeField] SerializebleHashSet<T> serialize = new();
 
-	public int Count => serialize.Count;
 	public event EventCollectionEventHandler<T> Event;
 	public event Action Changed;
 
 	public EventHashSet() { }
+	public EventHashSet(IEnumerable<T> collection) => serialize = (SerializebleHashSet<T>)collection.ToHashSet();
+	public SerializebleHashSet<T> Items => serialize;
+	public int Count => serialize.Count;
 
 	public void OnBeforeSerialize() { }
 	public void OnAfterDeserialize()
@@ -129,14 +134,14 @@ public class EventList<T> : IEventCollection<T>, IEnumerable<T>, ISerializationC
 {
 	[SerializeField] List<T> serialize = new();
 
-	public T this[int index] => serialize[index];
-
-	public int Count => serialize.Count;
 	public event EventCollectionEventHandler<T> Event;
 	public event Action Changed;
 
 	public EventList() { }
-	public EventList(IEnumerable<T> collection) { AddRange(collection); }
+	public EventList(IEnumerable<T> collection) => serialize = collection.ToList();
+	public T this[int index] => serialize[index];
+	public List<T> Items => serialize;
+	public int Count => serialize.Count;
 
 	public void OnBeforeSerialize() { }
 	public void OnAfterDeserialize()
