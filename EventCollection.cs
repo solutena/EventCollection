@@ -200,7 +200,7 @@ public class EventList<T> : IEventCollection<T>, IEnumerable<T>, ISerializationC
 		for (int i = target.Count - 1; i >= 0; i--)
 		{
 			var prev = target[i];
-			Serialize.Remove(prev);
+			serialize.Remove(prev);
 			Event?.Invoke(prev, false);
 		}
 		Changed?.Invoke();
@@ -208,8 +208,8 @@ public class EventList<T> : IEventCollection<T>, IEnumerable<T>, ISerializationC
 
 	public void OnChanged() => Changed?.Invoke();
 	public void OnEvent(T item, bool isAdd) => Event?.Invoke(item, isAdd);
-	public void ForEach(Action<T> action) => Serialize.ForEach(action);
-	public bool Contains(T item) => Serialize.Contains(item);
-	public IEnumerator<T> GetEnumerator() => Serialize.GetEnumerator();
-	IEnumerator IEnumerable.GetEnumerator() => Serialize.GetEnumerator();
+	public void ForEach(Action<T> action) => serialize.ForEach(action);
+	public bool Contains(T item) => serialize.Contains(item);
+	public IEnumerator<T> GetEnumerator() => serialize.GetEnumerator();
+	IEnumerator IEnumerable.GetEnumerator() => serialize.GetEnumerator();
 }
