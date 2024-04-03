@@ -21,8 +21,8 @@ public class EventDictionary<Key, Value> : IEventCollection<Value>, IEnumerable<
 
 	public EventDictionary() { }
 	public EventDictionary(IDictionary<Key, Value> dictionary) => serialize = (SerializebleDictionary<Key, Value>)dictionary.ToDictionary(k => k.Key, v => v.Value);
+	public SerializebleDictionary<Key, Value> Serialize { get => serialize; set => serialize = value; }
 	public Value this[Key key] => serialize[key];
-	public SerializebleDictionary<Key, Value> Items => serialize;
 	public int Count => serialize.Count;
 
 	public void OnBeforeSerialize() { }
@@ -80,7 +80,7 @@ public class EventHashSet<T> : IEventCollection<T>, IEnumerable<T>, ISerializati
 
 	public EventHashSet() { }
 	public EventHashSet(IEnumerable<T> collection) => serialize = (SerializebleHashSet<T>)collection.ToHashSet();
-	public SerializebleHashSet<T> Items => serialize;
+	public SerializebleHashSet<T> Serialize { get => serialize; set => serialize = value; }
 	public int Count => serialize.Count;
 
 	public void OnBeforeSerialize() { }
@@ -138,29 +138,29 @@ public class EventList<T> : IEventCollection<T>, IEnumerable<T>, ISerializationC
 	public event Action Changed;
 
 	public EventList() { }
-	public EventList(IEnumerable<T> collection) => serialize = collection.ToList();
-	public T this[int index] => serialize[index];
-	public List<T> Items => serialize;
-	public int Count => serialize.Count;
+	public EventList(IEnumerable<T> collection) => Serialize = collection.ToList();
+	public List<T> Serialize { get => serialize; set => serialize = value; }
+	public T this[int index] => Serialize[index];
+	public int Count => Serialize.Count;
 
 	public void OnBeforeSerialize() { }
 	public void OnAfterDeserialize()
 	{
-		foreach (var item in serialize)
+		foreach (var item in Serialize)
 			Event?.Invoke(item, true);
 		Changed?.Invoke();
 	}
 
 	public void Add(T item)
 	{
-		serialize.Add(item);
+		Serialize.Add(item);
 		Event?.Invoke(item, true);
 		Changed?.Invoke();
 	}
 
 	public void AddRange(IEnumerable<T> collection)
 	{
-		serialize.AddRange(collection);
+		Serialize.AddRange(collection);
 		foreach (var item in collection)
 			Event?.Invoke(item, true);
 		Changed?.Invoke();
@@ -168,8 +168,8 @@ public class EventList<T> : IEventCollection<T>, IEnumerable<T>, ISerializationC
 
 	public void Clear()
 	{
-		var prev = new List<T>(serialize);
-		serialize.Clear();
+		var prev = new List<T>(Serialize);
+		Serialize.Clear();
 		foreach (var item in prev)
 			Event?.Invoke(item, false);
 		Changed?.Invoke();
@@ -177,7 +177,7 @@ public class EventList<T> : IEventCollection<T>, IEnumerable<T>, ISerializationC
 
 	public bool Remove(T item)
 	{
-		if (serialize.Remove(item))
+		if (Serialize.Remove(item))
 		{
 			Event?.Invoke(item, false);
 			Changed?.Invoke();
@@ -188,19 +188,19 @@ public class EventList<T> : IEventCollection<T>, IEnumerable<T>, ISerializationC
 
 	public void RemoveAt(int index)
 	{
-		var item = serialize[index];
-		serialize.RemoveAt(index);
+		var item = Serialize[index];
+		Serialize.RemoveAt(index);
 		Event?.Invoke(item, false);
 		Changed?.Invoke();
 	}
 
 	public void RemoveAll(Func<T, bool> condition)
 	{
-		var target = new List<T>(serialize.Where(condition));
+		var target = new List<T>(Serialize.Where(condition));
 		for (int i = target.Count - 1; i >= 0; i--)
 		{
 			var prev = target[i];
-			serialize.Remove(prev);
+			Serialize.Remove(prev);
 			Event?.Invoke(prev, false);
 		}
 		Changed?.Invoke();
@@ -208,8 +208,8 @@ public class EventList<T> : IEventCollection<T>, IEnumerable<T>, ISerializationC
 
 	public void OnChanged() => Changed?.Invoke();
 	public void OnEvent(T item, bool isAdd) => Event?.Invoke(item, isAdd);
-	public void ForEach(Action<T> action) => serialize.ForEach(action);
-	public bool Contains(T item) => serialize.Contains(item);
-	public IEnumerator<T> GetEnumerator() => serialize.GetEnumerator();
-	IEnumerator IEnumerable.GetEnumerator() => serialize.GetEnumerator();
+	public void ForEach(Action<T> action) => Serialize.ForEach(action);
+	public bool Contains(T item) => Serialize.Contains(item);
+	public IEnumerator<T> GetEnumerator() => Serialize.GetEnumerator();
+	IEnumerator IEnumerable.GetEnumerator() => Serialize.GetEnumerator();
 }
