@@ -1,10 +1,13 @@
+
+# SerializeCollection
+
+직렬화 되지 않는 자료형인 `Dictionary`, `HashSet`, `Nullable<T>` 를 직렬화 할 수 있다.
+
 # EventCollection
 
 `Collection`에 변화가 있을 때 이벤트를 등록할 수 있는 클래스이다.
 
-`serialize` 할 수 있다.
-
-
+직렬화 할 수 있다.
 
 ## Event
 
