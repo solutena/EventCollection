@@ -14,7 +14,7 @@ interface IEventCollection<T>
 [Serializable]
 public class EventDictionary<Key, Value> : IEventCollection<Value>, IEnumerable<KeyValuePair<Key, Value>>, ISerializationCallbackReceiver
 {
-	[SerializeField] SerializebleDictionary<Key, Value> serialize;
+	[SerializeField] SerializebleDictionary<Key, Value> serialize = new();
 
 	public event EventCollectionEventHandler<Value> Event;
 	public event Action Changed;
@@ -70,7 +70,7 @@ public class EventDictionary<Key, Value> : IEventCollection<Value>, IEnumerable<
 [Serializable]
 public class EventHashSet<T> : IEventCollection<T>, IEnumerable<T>, ISerializationCallbackReceiver
 {
-	[SerializeField] SerializebleHashSet<T> serialize;
+	[SerializeField] SerializebleHashSet<T> serialize = new();
 
 	public int Count => serialize.Count;
 	public event EventCollectionEventHandler<T> Event;
@@ -127,7 +127,7 @@ public class EventHashSet<T> : IEventCollection<T>, IEnumerable<T>, ISerializati
 [Serializable]
 public class EventList<T> : IEventCollection<T>, IEnumerable<T>, ISerializationCallbackReceiver
 {
-	[SerializeField] List<T> serialize = new List<T>();
+	[SerializeField] List<T> serialize = new();
 
 	public T this[int index] => serialize[index];
 
@@ -145,7 +145,7 @@ public class EventList<T> : IEventCollection<T>, IEnumerable<T>, ISerializationC
 			Event?.Invoke(item, true);
 		Changed?.Invoke();
 	}
-	
+
 	public void Add(T item)
 	{
 		serialize.Add(item);
