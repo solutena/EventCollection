@@ -138,29 +138,29 @@ public class EventList<T> : IEventCollection<T>, IEnumerable<T>, ISerializationC
 	public event Action Changed;
 
 	public EventList() { }
-	public EventList(IEnumerable<T> collection) => Serialize = collection.ToList();
+	public EventList(IEnumerable<T> collection) => serialize = collection.ToList();
 	public List<T> Serialize { get => serialize; set => serialize = value; }
-	public T this[int index] => Serialize[index];
-	public int Count => Serialize.Count;
+	public T this[int index] => serialize[index];
+	public int Count => serialize.Count;
 
 	public void OnBeforeSerialize() { }
 	public void OnAfterDeserialize()
 	{
-		foreach (var item in Serialize)
+		foreach (var item in serialize)
 			Event?.Invoke(item, true);
 		Changed?.Invoke();
 	}
 
 	public void Add(T item)
 	{
-		Serialize.Add(item);
+		serialize.Add(item);
 		Event?.Invoke(item, true);
 		Changed?.Invoke();
 	}
 
 	public void AddRange(IEnumerable<T> collection)
 	{
-		Serialize.AddRange(collection);
+		serialize.AddRange(collection);
 		foreach (var item in collection)
 			Event?.Invoke(item, true);
 		Changed?.Invoke();
@@ -168,8 +168,8 @@ public class EventList<T> : IEventCollection<T>, IEnumerable<T>, ISerializationC
 
 	public void Clear()
 	{
-		var prev = new List<T>(Serialize);
-		Serialize.Clear();
+		var prev = new List<T>(serialize);
+		serialize.Clear();
 		foreach (var item in prev)
 			Event?.Invoke(item, false);
 		Changed?.Invoke();
@@ -177,7 +177,7 @@ public class EventList<T> : IEventCollection<T>, IEnumerable<T>, ISerializationC
 
 	public bool Remove(T item)
 	{
-		if (Serialize.Remove(item))
+		if (serialize.Remove(item))
 		{
 			Event?.Invoke(item, false);
 			Changed?.Invoke();
@@ -188,15 +188,15 @@ public class EventList<T> : IEventCollection<T>, IEnumerable<T>, ISerializationC
 
 	public void RemoveAt(int index)
 	{
-		var item = Serialize[index];
-		Serialize.RemoveAt(index);
+		var item = serialize[index];
+		serialize.RemoveAt(index);
 		Event?.Invoke(item, false);
 		Changed?.Invoke();
 	}
 
 	public void RemoveAll(Func<T, bool> condition)
 	{
-		var target = new List<T>(Serialize.Where(condition));
+		var target = new List<T>(serialize.Where(condition));
 		for (int i = target.Count - 1; i >= 0; i--)
 		{
 			var prev = target[i];
